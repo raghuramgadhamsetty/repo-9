@@ -17,12 +17,16 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Set date version
+      - name: Set date version with timestamp
         id: version
         run: |
           DATE_VERSION=$(date -u +'%Y.%m.%d')
-          echo "version=$DATE_VERSION" >> $GITHUB_OUTPUT
-          echo "date_version=$DATE_VERSION"
+          TIMESTAMP=$(date -u +'%H%M%S')
+          VERSION_WITH_TS="${DATE_VERSION}-${TIMESTAMP}"
+          echo "version=$VERSION_WITH_TS" >> $GITHUB_OUTPUT
+          echo "date_version=$DATE_VERSION" >> $GITHUB_OUTPUT
+          echo "timestamp=$TIMESTAMP" >> $GITHUB_OUTPUT
+          echo "version=$VERSION_WITH_TS"
 
       - name: Run CI
         run: |
@@ -32,7 +36,7 @@ jobs:
           echo "Version: ${{ steps.version.outputs.version }}"
           echo "CI completed successfully"
 
-      - name: Create artifact with date version
+      - name: Create artifact with date version and timestamp
         run: |
           mkdir -p dist
           echo "${{ steps.version.outputs.version }}" > dist/version.txt
@@ -40,8 +44,9 @@ jobs:
           echo "commit=${{ github.sha }}" >> dist/build-info.txt
           echo "version=${{ steps.version.outputs.version }}" >> dist/build-info.txt
           echo "branch=${{ github.ref_name }}" >> dist/build-info.txt
+          echo "timestamp=${{ steps.version.outputs.timestamp }}" >> dist/build-info.txt
 
-      - name: Upload artifact (date version)
+      - name: Upload artifact (date + timestamp)
         uses: actions/upload-artifact@v4
         with:
           name: build-${{ steps.version.outputs.version }}
