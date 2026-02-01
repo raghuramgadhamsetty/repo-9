@@ -1,0 +1,49 @@
+# CI - Runs on every push (commit), generates artifact with date version
+# Add this file to each repo as: .github/workflows/ci.yml
+
+name: CI
+
+on:
+  push:
+    branches:
+      - '**'
+  workflow_dispatch:
+
+jobs:
+  ci:
+    name: CI
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set date version
+        id: version
+        run: |
+          DATE_VERSION=$(date -u +'%Y.%m.%d')
+          echo "version=$DATE_VERSION" >> $GITHUB_OUTPUT
+          echo "date_version=$DATE_VERSION"
+
+      - name: Run CI
+        run: |
+          echo "CI triggered by push to ${{ github.ref }}"
+          echo "Repository: ${{ github.repository }}"
+          echo "Commit: ${{ github.sha }}"
+          echo "Version: ${{ steps.version.outputs.version }}"
+          echo "CI completed successfully"
+
+      - name: Create artifact with date version
+        run: |
+          mkdir -p dist
+          echo "${{ steps.version.outputs.version }}" > dist/version.txt
+          echo "repository=${{ github.repository }}" >> dist/build-info.txt
+          echo "commit=${{ github.sha }}" >> dist/build-info.txt
+          echo "version=${{ steps.version.outputs.version }}" >> dist/build-info.txt
+          echo "branch=${{ github.ref_name }}" >> dist/build-info.txt
+
+      - name: Upload artifact (date version)
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-${{ steps.version.outputs.version }}
+          path: dist/
+          retention-days: 30
